@@ -1,0 +1,36 @@
+name: 每日价格更新
+
+on:
+  schedule:
+    # 每天北京时间上午9:00运行 (UTC 1:00)
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+
+    - name: 设置Python环境
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: 安装依赖
+      run: |
+        pip install -r requirements.txt
+
+    - name: 运行爬虫
+      run: |
+        python commodity_price_scraper.py
+
+    - name: 提交更新
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add 商品价格数据.xlsx
+        git commit -m "🤖 自动更新价格数据 $(date +'%Y-%m-%d')" || echo "没有变化"
+        git push
